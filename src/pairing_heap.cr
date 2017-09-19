@@ -1,3 +1,4 @@
+require "./priority_queue"
 module PairingHeap
   class Heap(K, V)
     property size
