@@ -63,7 +63,7 @@ module PairingHeap
         return a
       end
 
-      if b.key > a.key
+      if b.key < a.key
         parent = b
         child = a
       else
