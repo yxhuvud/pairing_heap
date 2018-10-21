@@ -51,12 +51,12 @@ module PairingHeap
       return a if b.nil?
       return a if a == b
 
-      if b.key < a.key
-        parent = b
-        child = a
-      else
+      if a.key < b.key
         parent = a
         child = b
+      else
+        parent = b
+        child = a
       end
       parent.prepend_child(child)
       # TODO: Investigate: Tests pass even if these are not cleared?!?
