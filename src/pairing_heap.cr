@@ -1,4 +1,5 @@
 require "./priority_queue"
+
 module PairingHeap
   class Heap(K, V)
     property size
@@ -36,16 +37,7 @@ module PairingHeap
       if node == r
         @root = collapse(node.child)
       else
-        prev = node.prev.not_nil!
-        if prev.child == node
-          prev.child = node.next
-        else
-          prev.next = node.next
-        end
-        n = node.next
-        if n
-          n.prev = node.prev
-        end
+        node.unlink
         @root = merge(root, collapse(node.child))
       end
 
@@ -55,13 +47,9 @@ module PairingHeap
     end
 
     def merge(a : Node(K, V) | Nil, b : Node(K, V) | Nil)
-      if a.nil?
-        return b
-      elsif b.nil?
-        return a
-      elsif a == b
-        return a
-      end
+      return b if a.nil?
+      return a if b.nil?
+      return a if a == b
 
       if b.key < a.key
         parent = b
@@ -70,16 +58,8 @@ module PairingHeap
         parent = a
         child = b
       end
-
-      child.next = parent.child
-
-      current_child = parent.child
-      if current_child
-        current_child.prev = child
-      end
-      child.prev = parent
-      parent.child = child
-
+      parent.prepend_child(child)
+      # TODO: Investigate: Tests pass even if these are not cleared?!?
       parent.next = nil
       parent.prev = nil
 
@@ -91,19 +71,7 @@ module PairingHeap
       node.key = new_key
       return if node == root
 
-      # node.prev.not_nil! safe because not being root implies having
-      # a prev.
-      prev = node.prev.not_nil!
-      if prev.child == node
-        prev.child = node.next
-      else
-        prev.next = node.next
-      end
-
-      if n = node.next
-        n.prev = node.prev
-      end
-
+      node.unlink
       @root = merge(root, node)
     end
 
@@ -116,9 +84,12 @@ module PairingHeap
       @size == 0
     end
 
-    protected def collapse(node)
+    private def collapse(node)
       return nil unless node
 
+      # Collapse uses two phases:
+      # First merge every two nodes with each other, and store a
+      # reference to the previous pair in prev.
       n = node
       tail = nil
       while n
@@ -136,6 +107,7 @@ module PairingHeap
         end
       end
 
+      # Then merge all pairs.
       result = nil
       while tail
         n = tail.prev
@@ -157,6 +129,32 @@ module PairingHeap
       def initialize(key : K, value : V)
         @key = key
         @value = value
+      end
+
+      def prepend_child(new_child)
+        new_child.next = child
+        if ch = child
+          ch.prev = new_child
+        end
+        # note that the first element on each level have pointer to parent:
+        new_child.prev = self
+        @child = new_child
+      end
+
+      def unlink
+        # All nodes but the root has a prev, and the root is never
+        # unlinked, just dereferenced.
+        prev = self.prev.not_nil!
+        if prev.child == self # ie, prev references the parent.
+          prev.child = self.next
+        else
+          prev.next = self.next
+        end
+
+        if n = self.next
+          n.prev = prev
+        end
+        self
       end
     end
   end
