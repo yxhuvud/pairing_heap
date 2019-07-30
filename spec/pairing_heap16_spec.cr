@@ -152,7 +152,7 @@ describe PairingHeap do
     it "handles a million values" do
       heap = PairingHeap::Heap16(Int32, Int32).new
       values = (1..1_000_000).to_a
-      to_insert = values #.shuffle
+      to_insert = values.shuffle
       to_insert.each do |value|
         heap.insert(value, value)
       end

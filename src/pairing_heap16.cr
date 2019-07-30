@@ -22,28 +22,19 @@ module PairingHeap
       root.not_nil!.find_min
     end
 
-
     def insert(key : K, value : V)
       @size += 1
       inserter = @inserter
-      if inserter
-        if inserter.full?
-          @inserter = Node16(K, V).new(key, value)
-          @root = merge(root, @inserter)
-          raise "FAIL" if !@root && !@size.zero?
-        else
-          prev = inserter.prev
-          new_index = inserter.insert(key, value)
-          if new_index == 0 && prev && inserter != root && inserter.find_min < prev.find_min
-            inserter.unlink
-            @root = merge(root, inserter)
-            raise "FAIL" if !@root && !@size.zero?
-          end
-        end
-      else
+      if !inserter || inserter.full?
         @inserter = Node16(K, V).new(key, value)
-        @root = @inserter if @root.nil?
-        raise "FAIL" if !@root && !@size.zero?
+        @root = merge(root, @inserter)
+      else
+        prev = inserter.prev
+        new_index = inserter.insert(key, value)
+        if new_index == 0 && prev && inserter.find_min < prev.find_min
+          inserter.unlink
+          @root = merge(root, inserter)
+        end
       end
       @inserter
     end
@@ -63,46 +54,13 @@ module PairingHeap
       key_val, new_size = node.delete_min
       @size -= 1
 
-      r = root
       if new_size == 0
-        if node == r
-          @root = collapse(node.child)
-        #  raise "FAIL1" if !@root && !@size.zero?
-          @inserter = nil if r == @inserter && @root.nil?
-        else
-          node.unlink
-          @inserter = nil if @inserter == node
-          @root = merge(root, collapse(node.child))
-          raise "FAIL2" if !@root && !@size.zero?
-        end
+        @inserter = nil if node == @inserter
+        @root = merge(collapse(node.child), node.next)
       else
-        sibling = node.next
-        child = node.child
-
-        # both sibling and next?
-        if sibling
-          if node == r
-            @root = merge(collapse(node.child), node)
-            raise "FAIL3" if !@root && !@size.zero?
-            node.child = nil
-          else
-            node.unlink
-            @root = merge(r, node)
-            raise "FAIL4" if !@root && !@size.zero?
-          end
-        elsif child
-          if node == r
-            ch  = node.child
-            node.child = nil
-            @root = merge(collapse(ch), node)
-            raise "FAIL5" if !@root && !@size.zero?
-          else
-            node.unlink
-            @root = merge(r, node)
-            raise "FAIL6" if !@root && !@size.zero?
-          end
-        else
-
+        if child = node.child
+          node.child = nil
+          @root = merge(collapse(child), node)
         end
       end
 
@@ -123,21 +81,12 @@ module PairingHeap
       end
       parent.prepend_child(child)
       # TODO: Investigate: Tests pass even if these are not cleared?!?
+      # but benchmarks don't work.
       parent.next = nil
       parent.prev = nil
 
       parent
     end
-
-    # TODO when figure out how?
-    # def decrease_key(node : Node(K, V), new_key : K)
-    #   raise "New key must be < old key but wasn't" if node.key < new_key
-    #   node.key = new_key
-    #   return if node == root
-
-    #   node.unlink
-    #   @root = merge(root, node)
-    # end
 
     def clear
       @size = 0
@@ -249,7 +198,7 @@ module PairingHeap
           @items[i] = @items[i + 1]
         end
         @size -= 1
-        raise "Can't delete from empty node" if @size < 0
+
         {item, @size}
       end
 

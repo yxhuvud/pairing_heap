@@ -16,7 +16,7 @@ module PairingHeap
     end
 
     def find_min
-      root.not_nil!.find_min
+      root.not_nil!
     end
 
 
