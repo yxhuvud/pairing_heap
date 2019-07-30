@@ -1,8 +1,8 @@
-require "./pairing_heap"
+require "./pairing_heap16"
 
-class PriorityQueue(P, V)
+class PriorityQueue16(P, V)
   def initialize
-    @heap = PairingHeap::Heap(P, V).new
+    @heap = PairingHeap::Heap16(P, V).new
   end
 
   def size
@@ -28,10 +28,14 @@ class PriorityQueue(P, V)
 
   def pull : V
     @heap.delete_min[1]
+  rescue e : NilAssertionError
+    p @heap.size
+    p @heap.@root
+    raise e
   end
 
   def pull?
-    if val = @heap.delete_min
+    if val = @heap.delete_min?
       val[1]
     end
   end

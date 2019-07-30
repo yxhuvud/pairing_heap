@@ -1,5 +1,3 @@
-require "./priority_queue"
-
 module PairingHeap
   class Heap(K, V)
     property size
@@ -11,10 +9,16 @@ module PairingHeap
       @root = nil
     end
 
-    def find_min
+    def find_min?
       return nil if empty?
-      root
+
+      find_min
     end
+
+    def find_min
+      root.not_nil!.find_min
+    end
+
 
     def insert(key : K, value : V)
       node = Node(K, V).new(key, value)
@@ -24,10 +28,15 @@ module PairingHeap
       node
     end
 
-    def delete_min
+    def delete_min?
       if r = root
         delete(r)
       end
+    end
+
+    def delete_min
+      r = root.not_nil!
+      delete(r)
     end
 
     def delete(node : Node(K, V))

@@ -12,10 +12,16 @@ module PairingHeap
       @root = @inserter = nil
     end
 
-    def find_min
+    def find_min?
       return nil if empty?
+
+      find_min
+    end
+
+    def find_min
       root.not_nil!.find_min
     end
+
 
     def insert(key : K, value : V)
       @size += 1
@@ -23,23 +29,31 @@ module PairingHeap
       if inserter
         if inserter.full?
           @inserter = Node16(K, V).new(key, value)
-          @root = merge(root, inserter)
+          @root = merge(root, @inserter)
+          raise "FAIL" if !@root && !@size.zero?
         else
           prev = inserter.prev
           new_index = inserter.insert(key, value)
           if new_index == 0 && prev && inserter != root && inserter.find_min < prev.find_min
             inserter.unlink
             @root = merge(root, inserter)
+            raise "FAIL" if !@root && !@size.zero?
           end
         end
       else
         @inserter = Node16(K, V).new(key, value)
         @root = @inserter if @root.nil?
+        raise "FAIL" if !@root && !@size.zero?
       end
       @inserter
     end
 
     def delete_min
+      r = root.not_nil!
+      delete(r)
+    end
+
+    def delete_min?
       if r = root
         delete(r)
       end
@@ -47,37 +61,50 @@ module PairingHeap
 
     def delete(node : Node16(K, V))
       key_val, new_size = node.delete_min
+      @size -= 1
+
       r = root
       if new_size == 0
         if node == r
           @root = collapse(node.child)
+        #  raise "FAIL1" if !@root && !@size.zero?
           @inserter = nil if r == @inserter && @root.nil?
         else
           node.unlink
           @inserter = nil if @inserter == node
           @root = merge(root, collapse(node.child))
+          raise "FAIL2" if !@root && !@size.zero?
         end
       else
         sibling = node.next
         child = node.child
-        if sibling && node.find_min > sibling.find_min
+
+        # both sibling and next?
+        if sibling
           if node == r
-            @root = collapse(node.child)
+            @root = merge(collapse(node.child), node)
+            raise "FAIL3" if !@root && !@size.zero?
+            node.child = nil
           else
             node.unlink
-            @root = merge(root, collapse(node.child))
+            @root = merge(r, node)
+            raise "FAIL4" if !@root && !@size.zero?
           end
-        elsif child && node.find_min > child.find_min
+        elsif child
           if node == r
-            @root = collapse(node.child)
+            ch  = node.child
+            node.child = nil
+            @root = merge(collapse(ch), node)
+            raise "FAIL5" if !@root && !@size.zero?
           else
             node.unlink
-            @root = merge(root, collapse(node.child))
+            @root = merge(r, node)
+            raise "FAIL6" if !@root && !@size.zero?
           end
+        else
+
         end
       end
-
-      @size -= 1
 
       {key_val.key, key_val.value}
     end
@@ -151,11 +178,12 @@ module PairingHeap
         result = merge(result, tail)
         tail = n
       end
-
       result
     end
 
     class Node16(K, V)
+      SIZE = 16
+
       protected property child : Node16(K, V) | Nil
       protected property next : Node16(K, V) | Nil
       protected property prev : Node16(K, V) | Nil
@@ -185,19 +213,19 @@ module PairingHeap
       end
 
       def initialize(key : K, value : V)
-        @items = uninitialized StaticArray(Node(K, V), 16)
+        @items = uninitialized StaticArray(Node(K, V), SIZE)
         @items[0] = Node(K, V).new(key, value)
         @size = 1
       end
 
       def initialize(node : Node(K, V))
-        @items = uninitialized StaticArray(Node(K, V), 16)
+        @items = uninitialized StaticArray(Node(K, V), SIZE)
         @items[0] = node
         @size = 1
       end
 
       def full?
-        @size == 16
+        @size == SIZE
       end
 
       def empty?
@@ -221,6 +249,7 @@ module PairingHeap
           @items[i] = @items[i + 1]
         end
         @size -= 1
+        raise "Can't delete from empty node" if @size < 0
         {item, @size}
       end
 
@@ -229,7 +258,7 @@ module PairingHeap
       end
 
       def prepend_child(new_child : self)
-        new_child.next = child 
+        new_child.next = child
         if ch = child
           ch.prev = new_child
         end
