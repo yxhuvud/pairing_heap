@@ -199,6 +199,7 @@ module PairingHeap
         end
         @size -= 1
 
+        (@items.to_unsafe + @size).clear
         {item, @size}
       end
 
