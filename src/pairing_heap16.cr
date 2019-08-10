@@ -183,9 +183,9 @@ module PairingHeap
 
       def insert(key, value)
         index = @size
-        while index > 0 && @items[index - 1].key > key
-          @items[index] = @items[index - 1]
-          index -= 1
+        while index > 0 && @items[index &- 1].key > key
+          @items[index] = @items[index &- 1]
+          index &-= 1
         end
         @items[index] = Node(K, V).new(key, value)
         @size += 1
@@ -194,11 +194,10 @@ module PairingHeap
 
       def delete_min
         item = @items[0]
-        (@size - 1).times do |i|
-          @items[i] = @items[i + 1]
+        (@size &- 1).times do |i|
+          @items[i] = @items[i &+ 1]
         end
-        @size -= 1
-
+        @size &-= 1
         (@items.to_unsafe + @size).clear
         {item, @size}
       end
