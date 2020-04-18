@@ -24,19 +24,29 @@ module PairingHeap
 
     def insert(key : K, value : V)
       @size += 1
+
+      # Avoid allocating a new inserter unless necessary. Gives a
+      # slight improvement to the bounded size case at a minor cost to
+      # the insertion case:
+      r = @root
+      if r && !r.full?
+        r.insert(key, value)
+        return
+      end
+
       inserter = @inserter
       if !inserter || inserter.full?
         @inserter = Node16(K, V).new(key, value)
         @root = merge(root, @inserter)
       else
         prev = inserter.prev
-        new_index = inserter.insert(key, value)
-        if new_index == 0 && prev && inserter.find_min < prev.find_min
+        new_first = inserter.insert(key, value)
+        if new_first && prev && inserter.find_min < prev.find_min
           inserter.unlink
           @root = merge(root, inserter)
         end
       end
-      @inserter
+      nil
     end
 
     def delete_min
@@ -53,23 +63,20 @@ module PairingHeap
     def delete(node : Node16(K, V))
       key_val, new_size = node.delete_min
       @size -= 1
-
       if new_size == 0
-        @inserter = nil if node == @inserter
-        @root = merge(collapse(node.child), node.next)
-      else
-        if child = node.child
-          node.child = nil
-          @root = merge(collapse(child), node)
-        end
+        @root = collapse(node.child)
+        @inserter = @root if node == @inserter
+      elsif child = node.child
+        node.child = nil
+        @root = merge(collapse(child), node)
       end
 
       {key_val.key, key_val.value}
     end
 
     def merge(a : Node16(K, V) | Nil, b : Node16(K, V) | Nil)
-      return b if a.nil?
-      return a if b.nil?
+      return b if a.nil? || a.empty?
+      return a if b.nil? || b.empty?
       return a if a == b
 
       if a.find_min < b.find_min
@@ -80,11 +87,8 @@ module PairingHeap
         child = a
       end
       parent.prepend_child(child)
-      # TODO: Investigate: Tests pass even if these are not cleared?!?
-      # but benchmarks don't work.
       parent.next = nil
       parent.prev = nil
-
       parent
     end
 
@@ -107,8 +111,7 @@ module PairingHeap
       tail = nil
       while n
         a = n
-        b = a.next
-        if b
+        if b = a.next
           n = b.next
           result = merge(a, b)
           result.prev = tail

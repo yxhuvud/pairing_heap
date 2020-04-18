@@ -28,10 +28,6 @@ class PriorityQueue16(P, V)
 
   def pull : V
     @heap.delete_min[1]
-  rescue e : NilAssertionError
-    p @heap.size
-    p @heap.@root
-    raise e
   end
 
   def pull?

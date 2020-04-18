@@ -1,6 +1,6 @@
 require "./spec_helper"
 
-def tree_size(heap, display=false)
+def tree_size(heap, display = false)
   puts if display
   if r = heap.@root
     queue = Deque(typeof(r)).new([r])
@@ -47,15 +47,16 @@ describe PairingHeap do
 
       heap.insert(5_u32, 42)
       heap.find_min.key.should eq 5
-      heap.size == 1
+      heap.size.should eq 1
 
       heap.insert(6_u32, 42)
+
       heap.find_min.key.should eq 5
-      heap.size == 2
+      heap.size.should eq 2
 
       heap.insert(4_u32, 42)
       heap.find_min.key.should eq 4
-      heap.size == 3
+      heap.size.should eq 3
     end
   end
 
@@ -147,7 +148,6 @@ describe PairingHeap do
       end
       vals.should eq values.sort
     end
-
 
     it "handles a million values" do
       heap = PairingHeap::Heap16(Int32, Int32).new

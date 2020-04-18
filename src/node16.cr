@@ -5,8 +5,9 @@ module PairingHeap
     protected property child : Node16(K, V) | Nil
     protected property next : Node16(K, V) | Nil
     protected property prev : Node16(K, V) | Nil
+    protected property items : StaticArray(Node(K, V), SIZE)
 
-    protected property items
+    protected property size
 
     struct Node(K, V)
       include Comparable(self)
@@ -30,10 +31,9 @@ module PairingHeap
       "[#{@size} : #{@items.first(@size).map(&.to_s).join(" ")}]"
     end
 
-    def initialize(key : K, value : V)
-      @items = uninitialized StaticArray(Node(K, V), SIZE)
-      @items[0] = Node(K, V).new(key, value)
-      @size = 1
+    def self.new(key : K, value : V)
+      node = Node(K, V).new(key, value)
+      new(node)
     end
 
     def initialize(node : Node(K, V))
@@ -50,22 +50,24 @@ module PairingHeap
       @size == 0
     end
 
-    def insert(key, value)
+    def insert(key, value) : Bool
       index = @size
+
       while index > 0 && @items[index &- 1].key > key
         @items[index] = @items[index &- 1]
         index &-= 1
       end
       @items[index] = Node(K, V).new(key, value)
-      @size += 1
-      index
+      @size &+= 1
+      @items[0].key == key
     end
 
     def delete_min
+      raise "Unreachable" if empty?
+
       item = @items[0]
-      (@size &- 1).times do |i|
-        @items[i] = @items[i &+ 1]
-      end
+      (@items.to_unsafe + 1).move_to(@items.to_unsafe, @size &- 1)
+
       @size &-= 1
       (@items.to_unsafe + @size).clear
       {item, @size}
