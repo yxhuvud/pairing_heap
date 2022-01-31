@@ -1,6 +1,4 @@
 require "benchmark"
-
-require "./heap"
 require "./priority_queue"
 require "./priority_queue_n"
 
