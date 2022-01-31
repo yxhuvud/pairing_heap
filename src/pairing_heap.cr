@@ -19,7 +19,6 @@ module PairingHeap
       root.not_nil!
     end
 
-
     def insert(key : K, value : V)
       node = Node(K, V).new(key, value)
       @size += 1
