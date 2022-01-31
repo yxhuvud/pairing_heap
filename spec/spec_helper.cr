@@ -1,3 +1,3 @@
 require "spec"
 require "../src/pairing_heap"
-require "../src/pairing_heap16"
+require "../src/pairing_heap_n"

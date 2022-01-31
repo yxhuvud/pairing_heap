@@ -1,11 +1,11 @@
-require "./node16"
+require "./node_n"
 
 module PairingHeap
-  class Heap16(K, V)
+  class HeapN(K, V, SIZE)
     property size
 
-    private property root : Node16(K, V)?
-    private property inserter : Node16(K, V)?
+    private property root : NodeN(K, V, SIZE)?
+    private property inserter : NodeN(K, V, SIZE)?
 
     def initialize
       @size = 0
@@ -36,7 +36,7 @@ module PairingHeap
 
       inserter = @inserter
       if !inserter || inserter.full?
-        @inserter = Node16(K, V).new(key, value)
+        @inserter = NodeN(K, V, SIZE).new(key, value)
         @root = merge(root, @inserter)
       else
         prev = inserter.prev
@@ -60,7 +60,7 @@ module PairingHeap
       end
     end
 
-    def delete(node : Node16(K, V))
+    def delete(node : NodeN(K, V, SIZE))
       key_val, new_size = node.delete_min
       @size -= 1
       if new_size == 0
@@ -74,7 +74,7 @@ module PairingHeap
       {key_val.key, key_val.value}
     end
 
-    def merge(a : Node16(K, V) | Nil, b : Node16(K, V) | Nil)
+    def merge(a : NodeN(K, V, SIZE) | Nil, b : NodeN(K, V, SIZE) | Nil)
       return b if a.nil? || a.empty?
       return a if b.nil? || b.empty?
       return a if a == b

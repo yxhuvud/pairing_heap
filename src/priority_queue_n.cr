@@ -1,8 +1,8 @@
-require "./pairing_heap16"
+require "./pairing_heap_n"
 
-class PriorityQueue16(P, V)
+class PriorityQueueN(P, V, SIZE)
   def initialize
-    @heap = PairingHeap::Heap16(P, V).new
+    @heap = PairingHeap::HeapN(P, V, SIZE).new
   end
 
   def size

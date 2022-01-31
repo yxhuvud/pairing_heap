@@ -1,10 +1,8 @@
 module PairingHeap
-  class Node16(K, V)
-    SIZE = 16
-
-    protected property child : Node16(K, V) | Nil
-    protected property next : Node16(K, V) | Nil
-    protected property prev : Node16(K, V) | Nil
+  class NodeN(K, V, SIZE)
+    protected property child : NodeN(K, V, SIZE) | Nil
+    protected property next : NodeN(K, V, SIZE) | Nil
+    protected property prev : NodeN(K, V, SIZE) | Nil
     protected property items : StaticArray(Node(K, V), SIZE)
 
     protected property size

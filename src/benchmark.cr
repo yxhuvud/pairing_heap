@@ -2,7 +2,7 @@ require "benchmark"
 
 require "./heap"
 require "./priority_queue"
-require "./priority_queue16"
+require "./priority_queue_n"
 
 values = 1_000_000.times.map { rand(Int32::MAX) }.to_a
 constant_size = 20000
@@ -13,7 +13,7 @@ Benchmark.bm do |x|
     values.sort
   }
 
-  x.report("mine - insert") {
+  x.report("\nmine - insert") {
     values.each do |v|
       queue.insert(v, v)
     end
@@ -46,39 +46,42 @@ Benchmark.bm do |x|
     end
   }
 
-  queue7 = PriorityQueue16(Int32, Int32).new
-  x.report("mine16 - insert") {
-    values.each do |v|
-      queue7.insert(v, v)
-    end
-  }
-  x.report("mine16 - delete") {
-    values.size.times do |v|
-      queue7.pull
-    end
-  }
-
-  results4 = Array(Int32).new(initial_capacity: values.size)
-  queue4 = PriorityQueue16(Int32, Int32).new
-  x.report("mine16 - mixed") {
-    values.each_with_index do |v, i|
-      queue4.insert(v, v)
-      if i % 7 == 3
-        # results4 <<
-        queue4.pull
+  {% for i in [8, 16, 32] %}
+    queue7 = PriorityQueueN(Int32, Int32, {{i.id}}).new
+    x.report("\nmine{{i.id}} - insert") {
+      values.each do |v|
+        queue7.insert(v, v)
       end
-    end
-  }
-
-  #  results8 = Array(Int32).new(initial_capacity: values.size)
-  queue8 = PriorityQueue16(Int32, Int32).new
-  x.report("mine16 - constant size") {
-    values.each_with_index do |v, i|
-      queue8.insert(v, v)
-      if i >= constant_size
-        #        results8 <<
-        queue8.pull
+    }
+    x.report("mine{{i.id}} - delete") {
+      values.size.times do |v|
+        queue7.pull
       end
-    end
+    }
+
+    results4 = Array(Int32).new(initial_capacity: values.size)
+    queue4 = PriorityQueueN(Int32, Int32, {{i.id}}).new
+    x.report("mine{{i.id}} - mixed") {
+      values.each_with_index do |v, i|
+        queue4.insert(v, v)
+        if i % 7 == 3
+          queue4.pull
+        end
+      end
+    }
+
+    queue8 = PriorityQueueN(Int32, Int32, {{i.id}}).new
+    x.report("mine{{i.id}} - constant size") {
+      values.each_with_index do |v, i|
+        queue8.insert(v, v)
+        if i >= constant_size
+          queue8.pull
+        end
+      end
+    }
+  {% end %}
+
+  x.report("\nsort") {
+    values.sort
   }
 end
